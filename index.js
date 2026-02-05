@@ -10,6 +10,10 @@ const usersRoutes = require("./router/auth/user.router");
 const postRoutes = require("./router/auth/post.router");
 const overviewRoutes = require("./router/auth/overview.router");
 
+app.get("/", (req, res) => {
+  res.send("Admin Backend API is running 🚀");
+});
+
 const app = express();
 app.use(express.json());
 const PORT = process.env.PORT || 5000;

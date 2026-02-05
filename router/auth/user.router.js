@@ -28,54 +28,73 @@ const isStrongPassword = (password) => {
   return passwordRegex.test(password);
 };
 
-// Admin Register
-router.post("/admin-register", upload.single("avatar"), async (req, res) => {
-  const { username, email, status, password, gender, avatar,
-    country, currency, firstName, lastName, address, phoneNumber, organization, language, zipCode, timeZone, state } = req.body;
-
-  if (!username || !email || !password) {
-    return res.status(400).json({ message: "All fields are required" });
-  }
-
-  if (!isValidEmail(email)) {
-    return res.status(400).json({ message: "Invalid email format" });
-  }
-
-  if (!isStrongPassword(password)) {
-    return res.status(400).json({
-      message: "Password must be at least 8 characters, include one uppercase letter, one number, and one special character",
-    });
-  }
+// user Register
+router.post("/user-register", upload.single("avatar"), async (req, res) => {
   try {
+    const {
+      username,email,status,password,gender, country,currency,
+      firstName,lastName, address, phoneNumber, organization,
+      language,zipCode,timeZone, state } = req.body;
+
+    if (!req.file) {
+      return res.status(400).json({ message: "Avatar is required" });
+    }
+
+    if (!username || !email || !password) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    if (!isValidEmail(email)) {
+      return res.status(400).json({ message: "Invalid email format" });
+    }
+
+    if (!isStrongPassword(password)) {
+      return res.status(400).json({
+        message:
+          "Password must be at least 8 characters, include one uppercase letter, one number, and one special character",
+      });
+    }
+
     const existingUser = await userModel.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: "User already exists" });
     }
-    bcrypt.hash(password, 5, async (err, hash) => {
-      if (err) {
-        return res.send({ success: false, msg: "Error hashing password" });
-      }
-      // const baseUrl = `${req.protocol}://${req.get("host")}`;
 
-      // const avatarPath = req.file
-      //   ? `${baseUrl}/uploads/avatars/${req.file.filename}`
-      //   : "";
-      const avatarPath = req.file
-        ? `/uploads/avatars/${req.file.filename}`
-        : "";
+    const hash = await bcrypt.hash(password, 10);
 
-      const user = new userModel({
-        username, email, status, password: hash, gender, avatar: avatarPath, role: "admin",
-        country, currency, firstName, lastName, address, phoneNumber, organization, language, zipCode, timeZone, state
-      });
-      await user.save();
-      res.send({ success: true, user });
+    const avatarPath = `/uploads/avatars/${req.file.filename}`;
+
+    const user = new userModel({
+      username,
+      email,
+      status,
+      password: hash,
+      gender,
+      avatar: avatarPath,
+      role: "user",
+      country,
+      currency,
+      firstName,
+      lastName,
+      address,
+      phoneNumber,
+      organization,
+      language,
+      zipCode,
+      timeZone,
+      state
     });
+
+    await user.save();
+
+    res.status(201).json({ success: true, user });
+
   } catch (err) {
     console.error("Register Error:", err);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
 
 // User Add By Admin Register
 router.post("/register", upload.single("avatar"), async (req, res) => {

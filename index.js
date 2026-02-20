@@ -22,6 +22,8 @@ const corsOptions = {
     "http://localhost:3000",
     "http://localhost:5173",
     "https://admin-frontend-reactjs-f8azsy5cp-mohits-projects-7270e91a.vercel.app",
+    "https://mellow-kringle-0d3f27.netlify.app"
+    
   ],
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],

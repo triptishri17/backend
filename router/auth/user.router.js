@@ -150,31 +150,81 @@ router.post("/register", upload.single("avatar"), async (req, res) => {
   }
 });
 
-// Admin Login
+// Admin / User Login
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
+  // ✅ Email validation
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!email || !emailRegex.test(email)) {
-    return res.status(400).json({ message: "Please enter a valid email address" });
+    return res.status(400).json({
+      message: "Please enter a valid email address"
+    });
   }
 
-  if (!password || password.length < 8) {
-    return res.status(400).json({ message: "Please enter a valid password" });
+  // ✅ Strong password validation (SAME AS REGISTER)
+  const passwordRegex =
+    /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
+
+  if (!password || !passwordRegex.test(password)) {
+    return res.status(400).json({
+      message:
+        "Login invalid credentials",
+    });
   }
 
   try {
     const user = await userModel.findOne({ email });
-    if (!user) return res.status(404).json({ message: "User not found" });
+    if (!user) {
+      return res.status(401).json({
+        message: "Invalid email or password"
+      });
+    }
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ message: "Incorrect password" });
+    if (!isMatch) {
+      return res.status(401).json({
+        message: "Invalid email or password"
+      });
+    }
 
-    const token = jwt.sign({ userId: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "7d" });
-    const { ...others } = user._doc;
-    res.status(200).json({ success: true, token, others });
+    const token = jwt.sign(
+      { userId: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    const { password: pwd, ...userData } = user._doc;
+
+    res.status(200).json({
+      success: true,
+      message: "Login successful",
+      token,
+      user: userData
+    });
+
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Login Error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+// routes/dashboard.routes.js
+router.get("/stats", authentication, async (req, res) => {
+  try {
+    const totalUsers = await User.countDocuments({ isDeleted: false });
+    const activeUsers = await User.countDocuments({ status: "active" });
+    const pendingUsers = await User.countDocuments({ status: "pending" });
+
+    res.json({
+      success: true,
+      data: {
+        total: totalUsers,
+        active: activeUsers,
+        pending: pendingUsers,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Dashboard stats error" });
   }
 });
 
@@ -228,6 +278,7 @@ router.get("/all", async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
+
 
 
 // Admin Profile *

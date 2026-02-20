@@ -8,9 +8,8 @@
     "start": "nodemon index.js"
   },
   "engines": {
-  "node": ">=22.0.0"
-},
-
+    "node": ">=22.0.0"
+  },
   "author": "mohit",
   "license": "ISC",
   "dependencies": {

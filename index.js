@@ -2,73 +2,68 @@ const express = require("express");
 const mongoose = require("mongoose");
 require("dotenv").config();
 const cors = require("cors");
-const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 
+// Routes
 const usersRoutes = require("./router/auth/user.router");
 const postRoutes = require("./router/auth/post.router");
 const overviewRoutes = require("./router/auth/overview.router");
 
-const app = express(); // ✅ FIRST
+const app = express();
 
-// ---------- MIDDLEWARE ----------
+/* ===================== MIDDLEWARE ===================== */
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-app.use(cors({
-  origin: function (origin, callback) {
-    const allowedOrigins = [
-      "http://localhost:3000",
-      "https://admin-frontend-reactjs-f8azsy5cp-mohits-projects-7270e91a.vercel.app"
-    ];
+/* ===================== CORS CONFIG ===================== */
+const corsOptions = {
+  origin: [
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "https://admin-frontend-reactjs-f8azsy5cp-mohits-projects-7270e91a.vercel.app",
+  ],
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
 
-    if (allowedOrigins.includes(origin) || !origin) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
-  credentials: true
-}));
+app.use(cors(corsOptions));
+// app.options("*", cors(corsOptions)); // ✅ preflight support
+// app.options("/*", cors(corsOptions));
 
-// ---------- ROOT TEST ROUTE ----------
+
+/* ===================== ROOT ===================== */
 app.get("/", (req, res) => {
-  res.send("Admin Backend API is running 🚀");
+  res.status(200).send("🚀 Admin Backend API is running");
 });
 
-// ---------- STATIC FILES ----------
-const uploadDir = path.join(__dirname, "uploads/avatars");
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
+/* ===================== STATIC FILES ===================== */
+const avatarDir = path.join(__dirname, "uploads/avatars");
+const imagesDir = path.join(__dirname, "images");
 
-app.use("/uploads/avatars", express.static(uploadDir));
-app.use("/images", express.static(path.join(__dirname, "images")));
+if (!fs.existsSync(avatarDir)) fs.mkdirSync(avatarDir, { recursive: true });
+if (!fs.existsSync(imagesDir)) fs.mkdirSync(imagesDir, { recursive: true });
 
-// ---------- MULTER ----------
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, "images"),
-  filename: (req, file, cb) => cb(null, req.body.name),
-});
-const upload = multer({ storage });
+app.use("/uploads/avatars", express.static(avatarDir));
+app.use("/images", express.static(imagesDir));
 
-app.post("/upload", upload.single("file"), (req, res) => {
-  res.status(200).json("File uploaded");
-});
-
-// ---------- ROUTES ----------
+/* ===================== ROUTES ===================== */
 app.use("/auth/user", usersRoutes);
 app.use("/auth/post", postRoutes);
 app.use("/auth/overview", overviewRoutes);
 
-// ---------- DATABASE ----------
+/* ===================== DATABASE ===================== */
 mongoose.set("strictQuery", false);
-mongoose.connect(process.env.MONGO_URL, { dbName: "BlogAdmin" })
-  .then(() => console.log("MongoDB Connected Successfully"))
-  .catch(err => console.log(err));
 
-// ---------- SERVER START ----------
+mongoose
+  .connect(process.env.MONGO_URL, {
+    dbName: "BlogAdmin",
+  })
+  .then(() => console.log("✅ MongoDB Connected"))
+  .catch((err) => console.error("❌ MongoDB Error:", err));
+
+/* ===================== SERVER ===================== */
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`🔥 Server running at http://localhost:${PORT}`);
 });

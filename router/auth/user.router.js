@@ -28,6 +28,18 @@ const isStrongPassword = (password) => {
   return passwordRegex.test(password);
 };
 
+/* ===========================
+   DASHBOARD STATS
+=========================== */
+// import express from "express";
+// import authentication from "../../middleware/authentication.js";
+// import { dashboardStats } from "../../controllers/dashboard.controller.js";
+
+// const router = express.Router();
+
+// router.post("/dashboard/stats", authentication, dashboardStats);
+
+// export default router;
 // user Register
 router.post("/user-register", upload.single("avatar"), async (req, res) => {
   try {
@@ -36,11 +48,11 @@ router.post("/user-register", upload.single("avatar"), async (req, res) => {
       firstName,lastName, address, phoneNumber, organization,
       language,zipCode,timeZone, state } = req.body;
 
-    if (!req.file) {
-      return res.status(400).json({ message: "Avatar is required" });
-    }
+    // if (!req.file) {
+    //   return res.status(400).json({ message: "Avatar is required" });
+    // }
 
-    if (!username || !email || !password) {
+    if (!firstName || !lastName || !email || !password) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
@@ -62,15 +74,15 @@ router.post("/user-register", upload.single("avatar"), async (req, res) => {
 
     const hash = await bcrypt.hash(password, 10);
 
-    const avatarPath = `/uploads/avatars/${req.file.filename}`;
+    // const avatarPath = `/uploads/avatars/${req.file.filename}`;
 
     const user = new userModel({
-      username,
+      username:firstName+lastName,
       email,
       status,
       password: hash,
       gender,
-      avatar: avatarPath,
+      // avatar: avatarPath,
       role: "user",
       country,
       currency,
@@ -208,6 +220,29 @@ router.post("/login", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+
+
+// routes/settingd.routes.js//
+router.put("/profile", authentication, async (req, res) => {
+  try {
+    const { fullName, email } = req.body;
+
+    const user = await userModel.findByIdAndUpdate(
+      req.user.id,
+      { fullName, email },
+      { new: true }
+    );
+
+    res.status(200).json({
+      success: true,
+      user
+    });
+
+  } catch (error) {
+    console.error("Update Profile Error:", error);
+    res.status(500).json({ message: "Server Error" });
+  }
+});
 // routes/dashboard.routes.js
 router.get("/stats", authentication, async (req, res) => {
   try {
@@ -265,7 +300,6 @@ router.get("/all", async (req, res) => {
       let avatar = u.avatar || "";
 
       if (avatar && !avatar.startsWith("http")) {
-        // prepend host to relative path
         avatar = `${baseUrl}${avatar}`;
       }
 
@@ -278,6 +312,7 @@ router.get("/all", async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
+
 
 
 

@@ -68,6 +68,8 @@ router.post(
   }
 );
 
+
+
 /* ===========================
    CREATE POST
 =========================== */
@@ -111,6 +113,7 @@ router.post(
   }
 );
 
+
 /* ===========================
    GET ALL POSTS
 =========================== */
@@ -123,7 +126,6 @@ router.get("/all", authentication, async (req, res) => {
       total: posts.length,
       posts
     });
-
   } catch (error) {
     console.error("Get All Posts Error:", error);
     res.status(500).json({ message: "Server Error" });
